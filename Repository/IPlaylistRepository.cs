@@ -1,0 +1,16 @@
+﻿using MusicPlayerApp.Models;
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace MusicPlayerApp.Repository
+{
+    internal interface IPlaylistRepository
+    {
+        List<Playlist> LoadPlaylistFromFile();
+        Task<bool> SavePlaylistsToFile(List<Playlist> playlists);
+    }
+}
