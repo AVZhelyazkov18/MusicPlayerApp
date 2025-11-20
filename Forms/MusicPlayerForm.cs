@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MusicPlayerApp.Models;
+using MusicPlayerApp.Service;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -22,8 +24,12 @@ namespace MusicPlayerApp.Forms
             "Fonts\\OpenSans-Bold.ttf"
         };
 
-        public MusicPlayerForm()
+        private readonly IPlaylistService _playlistService;
+
+        public MusicPlayerForm(IPlaylistService playlistService)
         {
+            _playlistService = playlistService;
+
             InitializeComponent();
             LoadCustomFonts();
             LoadPlaylistComponents();
@@ -43,21 +49,18 @@ namespace MusicPlayerApp.Forms
 
         private void LoadPlaylistComponents()
         {
-            List<string> playlists = new List<string>
-            {
-                "Playlist 1",  "Playlist 2",  "Playlist 3",  "Playlist 4",
-                "Playlist 5",  "Playlist 6",  "Playlist 7",  "Playlist 8",
-                "Playlist 9",  "Playlist 10", "Playlist 11", "Playlist 12",
-                "Playlist 13", "Playlist 14", "Playlist 15", "Playlist 16",
-                "Playlist 17", "Playlist 18", "Playlist 19", "Playlist 20",
-                "Playlist 21", "Playlist 22", "Playlist 23", "Playlist 24",
-                "Playlist 25"
-            };
+
+
+            List<Playlist> playlists = _playlistService.GetPlaylists();
 
             lblPlaylists.Font = new Font(pfc.Families[0], lblPlaylists.Font.Size, FontStyle.Bold);
             lblPlaylists.UseCompatibleTextRendering = true;
 
-            panelPlaylists.AutoScroll = true;
+            panelPlaylistHolder.AutoScroll = true;
+
+            // Destroys already existing buttons
+            panelPlaylistHolder.Controls.Clear();
+
 
             int scrollbarWidth = System.Windows.Forms.SystemInformation.VerticalScrollBarWidth;
 
@@ -67,10 +70,10 @@ namespace MusicPlayerApp.Forms
             {
                 Button btnPlaylist = new Button
                 {
-                    Text = playlist,
+                    Text = playlist.GetName(),
                     AutoSize = true,
                     Font = new Font(pfc.Families[1], 18, FontStyle.Bold),
-                    Size = new Size(panelPlaylists.Width - scrollbarWidth, 40),
+                    Size = new Size(panelPlaylistHolder.Width - scrollbarWidth, 40),
                     Location = new Point(0, yOffset),
                     Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
                     Dock = DockStyle.Top,
@@ -78,17 +81,56 @@ namespace MusicPlayerApp.Forms
                     Margin = Padding.Empty
                 };
 
+                btnPlaylist.Tag = playlist.id;
                 btnPlaylist.FlatAppearance.BorderSize = 0;
 
-                panelPlaylists.Controls.Add(btnPlaylist);
+                btnPlaylist.MouseUp += cmsPlaylistButton_MouseUp;
+
+                panelPlaylistHolder.Controls.Add(btnPlaylist);
 
                 yOffset += btnPlaylist.Height + 10;
             }
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void lblPlaylists_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private async void addPlaylistToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            await _playlistService.CreatePlaylistAsync();
+            LoadPlaylistComponents();
+        }
+
+        private void panelPlaylistHolder_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+                cmsPlaylist.Show(panelPlaylistHolder, e.Location);
+        }
+
+
+        private string? _lastRightClickedPlaylistId;
+
+        private void cmsPlaylistButton_MouseUp(object? sender, MouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right)
+                return;
+
+            var btn = (Button)sender!;
+            _lastRightClickedPlaylistId = btn.Tag as string;
+
+            var screenPoint = btn.PointToScreen(e.Location);
+            cmsPlaylistButton.Show(screenPoint);
+        }
+
+        private async void deletePlaylistToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_lastRightClickedPlaylistId == null)
+                return;
+
+            await _playlistService.DeletePlaylistAsync(_lastRightClickedPlaylistId);
+            LoadPlaylistComponents();
         }
     }
 }

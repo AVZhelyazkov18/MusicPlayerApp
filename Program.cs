@@ -1,4 +1,6 @@
 using MusicPlayerApp.Forms;
+using MusicPlayerApp.Repository;
+using MusicPlayerApp.Service;
 
 namespace MusicPlayerApp
 {
@@ -13,7 +15,11 @@ namespace MusicPlayerApp
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-            Application.Run(new MusicPlayerForm());
+
+            IPlaylistRepository playlistRepo = new PlaylistRepository();
+            IPlaylistService playlistService = new PlaylistService(playlistRepo);
+
+            Application.Run(new MusicPlayerForm(playlistService));
         }
     }
 }

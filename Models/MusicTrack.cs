@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MusicPlayerApp.Models
 {
-    internal class MusicTrack
+    public class MusicTrack
     {
         private string trackId { get; }
         private string trackTitle { get; }

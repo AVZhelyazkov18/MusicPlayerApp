@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MusicPlayerApp.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,14 +7,12 @@ using System.Threading.Tasks;
 
 namespace MusicPlayerApp.Service
 {
-    internal interface IPlaylistService
+    public interface IPlaylistService
     {
         public void RefreshPlaylistsData();
-
-        public void DeletePlaylist(string guid);
-
-        public void CreatePlaylist();
-
+        public Task DeletePlaylistAsync(string guid);
+        public Task CreatePlaylistAsync();
         public void RenamePlaylist(string guid, string newName);
+        List<Playlist> GetPlaylists();
     }
 }
