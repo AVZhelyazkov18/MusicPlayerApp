@@ -13,6 +13,8 @@ namespace MusicPlayerApp.Service
         public Task DeletePlaylistAsync(string guid);
         public Task CreatePlaylistAsync();
         public void RenamePlaylist(string guid, string newName);
-        List<Playlist> GetPlaylists();
+        public List<Playlist> GetPlaylists();
+        public List<string> GetMusicTrackIdsFromPlaylistId(string playlistId);
+        public void AddMusicTrackToPlaylistId(string playlistId, string trackId);
     }
 }

@@ -1,6 +1,6 @@
 ﻿using MusicPlayerApp.Models;
 using MusicPlayerApp.Repository;
-
+#pragma warning disable CS8603
 
 namespace MusicPlayerApp.Service
 {
@@ -40,8 +40,7 @@ namespace MusicPlayerApp.Service
 
         public async Task DeletePlaylistAsync(string id)
         {
-            Playlist? playlist = loadedPlaylists
-                .FirstOrDefault(playlist => playlist.id == id);
+            Playlist playlist = GetPlaylistById(id);
 
             if (playlist != null && loadedPlaylists.Count > 0 && loadedPlaylists.Contains(playlist))
                 loadedPlaylists.Remove(playlist);
@@ -68,6 +67,33 @@ namespace MusicPlayerApp.Service
         public void RenamePlaylist(string guid, string newName)
         {
             throw new NotImplementedException();
+        }
+
+        public List<string> GetMusicTrackIdsFromPlaylistId(string id)
+        {
+            Playlist playlist = GetPlaylistById(id);
+
+            if(playlist != null)
+                return playlist.trackIds;
+
+            return null;
+        }
+
+        private Playlist GetPlaylistById(string id)
+        {
+
+            return loadedPlaylists
+        .FirstOrDefault(p => p.id == id);
+        }
+
+        public void AddMusicTrackToPlaylistId(string playlistId, string trackId)
+        {
+            Playlist playlist = GetPlaylistById(playlistId);
+
+            if(playlist != null && !playlist.trackIds.Contains(trackId))
+                playlist.trackIds.Add(trackId);
+
+            _repository.SavePlaylistsToFile(loadedPlaylists);
         }
     }
 }

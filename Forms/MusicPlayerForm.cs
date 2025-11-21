@@ -1,14 +1,8 @@
-﻿using MusicPlayerApp.Models;
+﻿using MusicPlayerApp.Enums;
+using MusicPlayerApp.Models;
 using MusicPlayerApp.Service;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Drawing.Text;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace MusicPlayerApp.Forms
@@ -17,23 +11,26 @@ namespace MusicPlayerApp.Forms
     {
         private string resourceDirectory = Directory.GetParent(Application.StartupPath).Parent.Parent.Parent.FullName + "\\Resources";
         private PrivateFontCollection pfc;
-        private Panel panel1;
         private string[] fontPaths = {
             "Fonts\\Roboto-Thin.ttf",
             "Fonts\\Roboto-Bold.ttf",
             "Fonts\\OpenSans-Bold.ttf"
         };
 
-        private readonly IPlaylistService _playlistService;
+        private string? _lastRightClickedPlaylistId;
+        private Button _lastSelectedPlaylist;
+        private Button _lastSelectedMusicTrack;
 
-        public MusicPlayerForm(IPlaylistService playlistService)
+        private readonly IPlaylistService _playlistService;
+        private readonly IMusicTrackService _musicTrackService;
+        public MusicPlayerForm(IPlaylistService playlistService, IMusicTrackService musicTrackService)
         {
             _playlistService = playlistService;
+            _musicTrackService = musicTrackService;
 
             InitializeComponent();
             LoadCustomFonts();
             LoadPlaylistComponents();
-            //LoadTrackPanelComponents();
         }
 
         private void LoadCustomFonts()
@@ -58,12 +55,10 @@ namespace MusicPlayerApp.Forms
 
             panelPlaylistHolder.AutoScroll = true;
 
-            // Destroys already existing buttons
             panelPlaylistHolder.Controls.Clear();
 
 
-            int scrollbarWidth = System.Windows.Forms.SystemInformation.VerticalScrollBarWidth;
-
+            int scrollbarWidth = SystemInformation.VerticalScrollBarWidth;
             int yOffset = 10;
 
             foreach (var playlist in playlists)
@@ -97,6 +92,8 @@ namespace MusicPlayerApp.Forms
 
         }
 
+        //-- Playlists' Event Handlers and View
+
         private async void addPlaylistToolStripMenuItem_Click(object sender, EventArgs e)
         {
             await _playlistService.CreatePlaylistAsync();
@@ -108,20 +105,21 @@ namespace MusicPlayerApp.Forms
             if (e.Button == MouseButtons.Right)
                 cmsPlaylist.Show(panelPlaylistHolder, e.Location);
         }
-
-
-        private string? _lastRightClickedPlaylistId;
-
         private void cmsPlaylistButton_MouseUp(object? sender, MouseEventArgs e)
         {
-            if (e.Button != MouseButtons.Right)
-                return;
-
             var btn = (Button)sender!;
-            _lastRightClickedPlaylistId = btn.Tag as string;
 
-            var screenPoint = btn.PointToScreen(e.Location);
-            cmsPlaylistButton.Show(screenPoint);
+            if (e.Button == MouseButtons.Right)
+            {
+                _lastRightClickedPlaylistId = btn.Tag as string;
+
+                var screenPoint = btn.PointToScreen(e.Location);
+                cmsPlaylistButton.Show(screenPoint);
+            }
+            else if (e.Button == MouseButtons.Left)
+            {
+                SelectionChange(btn, Selection.Playlist);
+            }
         }
 
         private async void deletePlaylistToolStripMenuItem_Click(object sender, EventArgs e)
@@ -131,6 +129,204 @@ namespace MusicPlayerApp.Forms
 
             await _playlistService.DeletePlaylistAsync(_lastRightClickedPlaylistId);
             LoadPlaylistComponents();
+        }
+
+
+        //-- Tracks' Event Handlers And View
+
+        // Loads all Tracks in the panelTrackHolder
+        private void LoadTracksForPlaylist(string playlistId)
+        {
+            if (string.IsNullOrEmpty(playlistId))
+                return;
+
+            List<string> trackIds = _playlistService.GetMusicTrackIdsFromPlaylistId(playlistId);
+            List<MusicTrack> tracks = _musicTrackService.GetTracksByIds(trackIds);
+
+            panelTrackHolder.Controls.Clear();
+
+            if (tracks != null && tracks.Count > 0)
+            {
+                foreach (MusicTrack track in tracks)
+                {
+
+                    string title = track.trackTitle;
+                    string album = track.trackAlbum?? "Unspecified";
+                    string dateAdded = track.trackDateAdded.ToString("MMM d, yyyy");
+                    string duration = track.trackDuration.ToString(@"m\:ss");
+
+                    Button trackRow = CreateTrackRow(track.trackId, title, album, dateAdded, duration);
+
+                    panelTrackHolder.Controls.Add(trackRow);
+                }
+            }
+        }
+        private Button CreateTrackRow(string id, string title, string album, string dateAdded, string duration)
+        {
+            Button trackBox = new Button
+            {
+                Height = 50,
+                Width = panelTrackHolder.ClientSize.Width,
+                BackColor = Color.FromKnownColor(KnownColor.White),
+                Margin = new Padding(0, 10, 0, 0)
+            };
+
+            trackBox.Tag = id;
+            int labelHeight = trackBox.Height - 20;
+            int centerY = (trackBox.Height - labelHeight) / 2;
+
+            Label lblTitle = new Label
+            {
+                Text = title,
+                AutoSize = false,
+                TextAlign = ContentAlignment.MiddleLeft,
+                ForeColor = Color.DarkGray,
+                Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                Width = (int)(trackBox.Width * 0.2),
+                Location = new Point(10, centerY),
+                Height = labelHeight,
+                Margin = new Padding(0, 5, 0, 0)
+            };
+
+            Label lblAlbum = new Label
+            {
+                Text = album,
+                AutoSize = false,
+                TextAlign = ContentAlignment.MiddleCenter,
+                ForeColor = Color.DarkGray,
+                Font = new Font(pfc.Families[1], 10, FontStyle.Regular),
+                Width = (int)(trackBox.Width * 0.3),
+                Location = new Point(lblTitle.Right + 10, centerY),
+                Height = labelHeight,
+                Margin = new Padding(0, 5, 0, 0)
+            };
+
+            Label lblDateAdded = new Label
+            {
+                Text = dateAdded,
+                AutoSize = false,
+                TextAlign = ContentAlignment.MiddleCenter,
+                ForeColor = Color.DarkGray,
+                Font = new Font(pfc.Families[1], 10, FontStyle.Regular),
+                Width = (int)(trackBox.Width * 0.20),
+                Location = new Point(lblAlbum.Right + 10, centerY),
+                Height = labelHeight,
+            };
+
+            Label lblDuration = new Label
+            {
+                Text = duration,
+                AutoSize = false,
+                TextAlign = ContentAlignment.MiddleCenter,
+                ForeColor = Color.DarkGray,
+                Font = new Font(pfc.Families[1], 10, FontStyle.Regular),
+                Width = (int)(trackBox.Width * 0.07),
+                Location = new Point(trackBox.Width - 70, centerY),
+                Height = labelHeight,
+            };
+
+            trackBox.Click += TrackRow_Click;
+            lblTitle.Click += TrackRow_Click;
+            lblAlbum.Click += TrackRow_Click;
+            lblDateAdded.Click += TrackRow_Click;
+            lblDuration.Click += TrackRow_Click;
+
+            trackBox.Controls.Add(lblTitle);
+            trackBox.Controls.Add(lblAlbum);
+            trackBox.Controls.Add(lblDateAdded);
+            trackBox.Controls.Add(lblDuration);
+
+            return trackBox;
+        }
+
+        private void TrackRow_Click(object? sender, EventArgs e) {
+            Control obj = (Control)sender!;
+
+            Button trackBox = obj as Button ?? (Button)obj.Parent!;
+
+            if (trackBox == null)
+                return;
+
+            string trackId = (string)trackBox.Tag!;
+
+            if (trackId == null) 
+                return;
+
+            SelectionChange(trackBox, Selection.MusicTrack);
+        }
+
+        private void SelectionChange(Control selectedObject, Selection selectionObject)
+        {
+            switch (selectionObject)
+            {
+                case Selection.Playlist:
+                    
+                    if(_lastSelectedPlaylist != null)
+                    {
+                        _lastSelectedPlaylist.BackColor = Color.FromKnownColor(KnownColor.Menu);
+                        _lastSelectedPlaylist.FlatAppearance.BorderSize = 0;
+                    }
+                    
+                    Button btn1 = (Button)selectedObject;
+
+                    btn1.FlatAppearance.BorderSize = 2;
+                    btn1.FlatAppearance.BorderColor = Color.Gray;
+                    btn1.BackColor = Color.FromArgb(230, 240, 255);
+
+                    LoadTracksForPlaylist((string)btn1.Tag!);
+
+                    _lastSelectedPlaylist = btn1;
+                    break;
+                case Selection.MusicTrack:
+
+                    if (_lastSelectedMusicTrack != null)
+                    {
+                        _lastSelectedMusicTrack.BackColor = Color.FromKnownColor(KnownColor.Menu);
+                        _lastSelectedPlaylist.FlatAppearance.BorderSize = 0;
+                    }
+
+                    Button btn2 = (Button)selectedObject;
+
+                    btn2.FlatAppearance.BorderSize = 2;
+                    btn2.FlatAppearance.BorderColor = Color.Gray;
+                    btn2.BackColor = Color.FromArgb(230, 240, 255);
+
+                    _lastSelectedMusicTrack = btn2;
+                    break;
+            }
+        }
+
+        private async void addAMusicTrackToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (OpenFileDialog ofd = new OpenFileDialog())
+            {
+                ofd.Title = "Select a music file";
+                ofd.Filter = "Audio Files|*.mp3;*.wav;*.ogg;|All Files|*.*";
+                ofd.Multiselect = false;
+
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    string trackPath = ofd.FileName;
+                    if (string.IsNullOrEmpty(trackPath))
+                        return;
+
+                    string playlistId = (string)_lastSelectedPlaylist.Tag!;
+
+                    if (playlistId != null)
+                    {
+                        await _musicTrackService.CreateTrackFromData(playlistId, trackPath);
+                        LoadTracksForPlaylist(playlistId);
+                    }
+                }
+            }
+        }
+
+        private void panelTrackHolder_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (panelTrackHolder.Visible && e.Button == MouseButtons.Right)
+            {
+                cmsMusicTrackAdd.Show(panelTrackHolder, e.Location);
+            }
         }
     }
 }

@@ -1,17 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
 namespace MusicPlayerApp.Models
 {
     public class MusicTrack
     {
-        private string trackId { get; }
-        private string trackTitle { get; }
-        private string trackArtist { get; }
-        private DateOnly trackReleaseDate;
-        private string trackAbsolutePath;
+        [JsonInclude]
+        public string trackId { get; set; }
+        [JsonInclude]
+        public string trackTitle { get; set; }
+        [JsonInclude]
+        public string trackAlbum { get; set; }
+        [JsonInclude]
+        public DateTime trackDateAdded { get; set; }
+        [JsonInclude]
+        public TimeSpan trackDuration { get; set; }
+        [JsonInclude]
+        public string trackAbsolutePath { get; set; }
+
+        public MusicTrack(string trackPath, string trackTitle, string trackAlbum, TimeSpan trackDuration, DateTime trackAdded) {
+            trackId = Guid.NewGuid().ToString();
+            this.trackAbsolutePath = trackPath;
+            this.trackTitle = trackTitle;
+            this.trackAlbum = trackAlbum;
+            this.trackDateAdded = trackAdded;
+            this.trackDuration = trackDuration;
+        }
+        [JsonConstructor]
+        public MusicTrack() { }
     }
 }

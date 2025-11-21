@@ -19,7 +19,10 @@ namespace MusicPlayerApp
             IPlaylistRepository playlistRepo = new PlaylistRepository();
             IPlaylistService playlistService = new PlaylistService(playlistRepo);
 
-            Application.Run(new MusicPlayerForm(playlistService));
+            IMusicTrackRepository trackRepository = new MusicTrackRepository();
+            IMusicTrackService trackService = new MusicTrackService(trackRepository, playlistService);
+
+            Application.Run(new MusicPlayerForm(playlistService, trackService));
         }
     }
 }

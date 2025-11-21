@@ -33,15 +33,26 @@
             lineBreak1 = new Panel();
             panelPlaylistHolder = new FlowLayoutPanel();
             lblPlaylists = new Label();
-            panelTrackHolder = new Panel();
+            panelTrackBackground = new Panel();
+            lblCurrentTrack = new Label();
             panel2 = new Panel();
+            btnForward = new Button();
+            btnBackward = new Button();
+            btnPlayPause = new Button();
             cmsPlaylist = new ContextMenuStrip(components);
             addPlaylistToolStripMenuItem = new ToolStripMenuItem();
             cmsPlaylistButton = new ContextMenuStrip(components);
             deletePlaylistToolStripMenuItem = new ToolStripMenuItem();
+            panel3 = new Panel();
+            panelTrackHolder = new FlowLayoutPanel();
+            cmsMusicTrackAdd = new ContextMenuStrip(components);
+            addAMusicTrackToolStripMenuItem = new ToolStripMenuItem();
             panelBackgroundPlaylists.SuspendLayout();
+            panelTrackBackground.SuspendLayout();
+            panel2.SuspendLayout();
             cmsPlaylist.SuspendLayout();
             cmsPlaylistButton.SuspendLayout();
+            cmsMusicTrackAdd.SuspendLayout();
             SuspendLayout();
             // 
             // panelBackgroundPlaylists
@@ -88,21 +99,67 @@
             lblPlaylists.Text = "Playlists";
             lblPlaylists.Click += lblPlaylists_Click;
             // 
-            // panelTrackHolder
+            // panelTrackBackground
             // 
-            panelTrackHolder.BackColor = SystemColors.Menu;
-            panelTrackHolder.Location = new Point(268, 12);
-            panelTrackHolder.Name = "panelTrackHolder";
-            panelTrackHolder.Size = new Size(984, 502);
-            panelTrackHolder.TabIndex = 1;
+            panelTrackBackground.BackColor = SystemColors.Menu;
+            panelTrackBackground.Controls.Add(lblCurrentTrack);
+            panelTrackBackground.Location = new Point(268, 12);
+            panelTrackBackground.Name = "panelTrackBackground";
+            panelTrackBackground.Size = new Size(984, 502);
+            panelTrackBackground.TabIndex = 1;
+            // 
+            // lblCurrentTrack
+            // 
+            lblCurrentTrack.AutoSize = true;
+            lblCurrentTrack.BackColor = Color.Transparent;
+            lblCurrentTrack.Font = new Font("Segoe UI", 16F);
+            lblCurrentTrack.Location = new Point(19, 20);
+            lblCurrentTrack.Name = "lblCurrentTrack";
+            lblCurrentTrack.Size = new Size(241, 30);
+            lblCurrentTrack.TabIndex = 0;
+            lblCurrentTrack.Text = "Currently Playing: None";
             // 
             // panel2
             // 
             panel2.BackColor = SystemColors.Menu;
+            panel2.Controls.Add(btnForward);
+            panel2.Controls.Add(btnBackward);
+            panel2.Controls.Add(btnPlayPause);
             panel2.Location = new Point(268, 533);
             panel2.Name = "panel2";
             panel2.Size = new Size(984, 136);
             panel2.TabIndex = 2;
+            // 
+            // btnForward
+            // 
+            btnForward.BackColor = Color.Transparent;
+            btnForward.Image = Properties.Resources.next_arrow;
+            btnForward.Location = new Point(530, 86);
+            btnForward.Name = "btnForward";
+            btnForward.Size = new Size(40, 40);
+            btnForward.TabIndex = 2;
+            btnForward.UseVisualStyleBackColor = false;
+            // 
+            // btnBackward
+            // 
+            btnBackward.BackColor = Color.Transparent;
+            btnBackward.Image = Properties.Resources.previous_arrow;
+            btnBackward.Location = new Point(430, 86);
+            btnBackward.Name = "btnBackward";
+            btnBackward.Size = new Size(40, 40);
+            btnBackward.TabIndex = 1;
+            btnBackward.UseVisualStyleBackColor = false;
+            // 
+            // btnPlayPause
+            // 
+            btnPlayPause.BackColor = Color.Transparent;
+            btnPlayPause.Image = Properties.Resources.play;
+            btnPlayPause.Location = new Point(480, 86);
+            btnPlayPause.Margin = new Padding(0);
+            btnPlayPause.Name = "btnPlayPause";
+            btnPlayPause.Size = new Size(40, 40);
+            btnPlayPause.TabIndex = 0;
+            btnPlayPause.UseVisualStyleBackColor = false;
             // 
             // cmsPlaylist
             // 
@@ -121,15 +178,44 @@
             // 
             cmsPlaylistButton.Items.AddRange(new ToolStripItem[] { deletePlaylistToolStripMenuItem });
             cmsPlaylistButton.Name = "cmsPlaylistButton";
-            cmsPlaylistButton.Size = new Size(181, 48);
+            cmsPlaylistButton.Size = new Size(148, 26);
             cmsPlaylistButton.MouseUp += cmsPlaylistButton_MouseUp;
             // 
             // deletePlaylistToolStripMenuItem
             // 
             deletePlaylistToolStripMenuItem.Name = "deletePlaylistToolStripMenuItem";
-            deletePlaylistToolStripMenuItem.Size = new Size(180, 22);
+            deletePlaylistToolStripMenuItem.Size = new Size(147, 22);
             deletePlaylistToolStripMenuItem.Text = "Delete Playlist";
             deletePlaylistToolStripMenuItem.Click += deletePlaylistToolStripMenuItem_Click;
+            // 
+            // panel3
+            // 
+            panel3.Location = new Point(268, 91);
+            panel3.Name = "panel3";
+            panel3.Size = new Size(983, 2);
+            panel3.TabIndex = 1;
+            // 
+            // panelTrackHolder
+            // 
+            panelTrackHolder.BackColor = SystemColors.Menu;
+            panelTrackHolder.Location = new Point(268, 99);
+            panelTrackHolder.Name = "panelTrackHolder";
+            panelTrackHolder.Size = new Size(984, 412);
+            panelTrackHolder.TabIndex = 1;
+            panelTrackHolder.MouseUp += panelTrackHolder_MouseUp;
+            // 
+            // cmsMusicTrackAdd
+            // 
+            cmsMusicTrackAdd.Items.AddRange(new ToolStripItem[] { addAMusicTrackToolStripMenuItem });
+            cmsMusicTrackAdd.Name = "cmsMusicTrackAdd";
+            cmsMusicTrackAdd.Size = new Size(174, 26);
+            // 
+            // addAMusicTrackToolStripMenuItem
+            // 
+            addAMusicTrackToolStripMenuItem.Name = "addAMusicTrackToolStripMenuItem";
+            addAMusicTrackToolStripMenuItem.Size = new Size(173, 22);
+            addAMusicTrackToolStripMenuItem.Text = "Add A Music Track";
+            addAMusicTrackToolStripMenuItem.Click += addAMusicTrackToolStripMenuItem_Click;
             // 
             // MusicPlayerForm
             // 
@@ -138,17 +224,24 @@
             AutoSizeMode = AutoSizeMode.GrowAndShrink;
             BackColor = SystemColors.ActiveBorder;
             ClientSize = new Size(1264, 681);
-            Controls.Add(panel2);
             Controls.Add(panelTrackHolder);
+            Controls.Add(panel3);
+            Controls.Add(panel2);
+            Controls.Add(panelTrackBackground);
             Controls.Add(panelBackgroundPlaylists);
             FormBorderStyle = FormBorderStyle.FixedSingle;
+            MaximizeBox = false;
             Name = "MusicPlayerForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Music Player";
             panelBackgroundPlaylists.ResumeLayout(false);
             panelBackgroundPlaylists.PerformLayout();
+            panelTrackBackground.ResumeLayout(false);
+            panelTrackBackground.PerformLayout();
+            panel2.ResumeLayout(false);
             cmsPlaylist.ResumeLayout(false);
             cmsPlaylistButton.ResumeLayout(false);
+            cmsMusicTrackAdd.ResumeLayout(false);
             ResumeLayout(false);
         }
 
@@ -158,11 +251,19 @@
         private System.Windows.Forms.Label lblPlaylists;
         private FlowLayoutPanel panelPlaylistHolder;
         private Panel lineBreak1;
-        private Panel panelTrackHolder;
+        private Panel panelTrackBackground;
         private Panel panel2;
         private ContextMenuStrip cmsPlaylist;
         private ToolStripMenuItem addPlaylistToolStripMenuItem;
         private ContextMenuStrip cmsPlaylistButton;
         private ToolStripMenuItem deletePlaylistToolStripMenuItem;
+        private Label lblCurrentTrack;
+        private Panel panel3;
+        private FlowLayoutPanel panelTrackHolder;
+        private ContextMenuStrip cmsMusicTrackAdd;
+        private ToolStripMenuItem addAMusicTrackToolStripMenuItem;
+        private Button btnPlayPause;
+        private Button btnBackward;
+        private Button btnForward;
     }
 }
