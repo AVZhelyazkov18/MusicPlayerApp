@@ -64,9 +64,21 @@ namespace MusicPlayerApp.Service
             this.loadedPlaylists = playlists;
         }
 
-        public void RenamePlaylist(string guid, string newName)
+        public void RenamePlaylist(string playlistId, string newName)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrWhiteSpace(playlistId) || string.IsNullOrWhiteSpace(newName))
+                return;
+
+            if (loadedPlaylists == null || loadedPlaylists.Count == 0)
+                RefreshPlaylistsData();
+
+            Playlist playlist = GetPlaylistById(playlistId);
+            if (playlist == null)
+                return;
+
+            playlist.playlistName = newName.Trim();
+
+            _repository.SavePlaylistsToFile(loadedPlaylists);
         }
 
         public List<string> GetMusicTrackIdsFromPlaylistId(string id)
@@ -79,11 +91,9 @@ namespace MusicPlayerApp.Service
             return null;
         }
 
-        private Playlist GetPlaylistById(string id)
+        public Playlist GetPlaylistById(string id)
         {
-
-            return loadedPlaylists
-        .FirstOrDefault(p => p.id == id);
+            return loadedPlaylists.FirstOrDefault(p => p.id == id);
         }
 
         public void AddMusicTrackToPlaylistId(string playlistId, string trackId)

@@ -11,10 +11,13 @@ namespace MusicPlayerApp.Service
 
         private List<MusicTrack> loadedTracks;
 
+        private WindowsMediaPlayer wmp;
+
         public MusicTrackService(IMusicTrackRepository musicTrackRepository, IPlaylistService playlistService)
         {
             this.musicTrackRepository = musicTrackRepository;
             this.playlistService = playlistService;
+            this.wmp = new WindowsMediaPlayer();
 
             loadedTracks = musicTrackRepository.LoadMusicTracksFromJson();
         }
@@ -31,10 +34,17 @@ namespace MusicPlayerApp.Service
                 .Where(track => trackIds.Contains(track.trackId))
                 .ToList();
         }
+        public MusicTrack GetTrackById(string trackId)
+        {
+            if (trackId == null || loadedTracks == null || loadedTracks.Count <= 0)
+                return null;
+
+            return loadedTracks
+                .FirstOrDefault(track => track.trackId == trackId, null);
+        }
 
         public async Task<bool> CreateTrackFromData(string playlistId, string trackPath)
         {
-            WindowsMediaPlayer wmp = new WindowsMediaPlayer();
             IWMPMedia media = wmp.newMedia(trackPath);
 
             string title = string.IsNullOrEmpty(media.getItemInfo("Title")) ? "Unspecified" : media.getItemInfo("Title");
@@ -52,6 +62,20 @@ namespace MusicPlayerApp.Service
 
             bool result = await musicTrackRepository.SaveMusicTracksToJson(loadedTracks);
             return result;
+        }
+
+        public int GetOrderTrack(string playlistId, string trackId)
+        {
+            Playlist playlist = playlistService.GetPlaylistById(playlistId);
+
+            if (playlist == null ||
+                playlist.trackIds == null ||
+                playlist.trackIds.Count <= 0)
+                return -1;
+
+            int index = playlist.trackIds.IndexOf(trackId);
+
+            return index;
         }
     }
 }

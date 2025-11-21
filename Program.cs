@@ -22,7 +22,9 @@ namespace MusicPlayerApp
             IMusicTrackRepository trackRepository = new MusicTrackRepository();
             IMusicTrackService trackService = new MusicTrackService(trackRepository, playlistService);
 
-            Application.Run(new MusicPlayerForm(playlistService, trackService));
+            IPlaybackService playbackService = new PlaybackService(playlistService, trackService);
+
+            Application.Run(new MusicPlayerForm(playlistService, trackService, playbackService));
         }
     }
 }

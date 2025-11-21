@@ -14,6 +14,7 @@ namespace MusicPlayerApp.Service
         public Task CreatePlaylistAsync();
         public void RenamePlaylist(string guid, string newName);
         public List<Playlist> GetPlaylists();
+        Playlist GetPlaylistById(string playlistId);
         public List<string> GetMusicTrackIdsFromPlaylistId(string playlistId);
         public void AddMusicTrackToPlaylistId(string playlistId, string trackId);
     }

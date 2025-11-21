@@ -17,20 +17,26 @@ namespace MusicPlayerApp.Forms
             "Fonts\\OpenSans-Bold.ttf"
         };
 
-        private string? _lastRightClickedPlaylistId;
+        private Button _lastRightClickedPlaylist;
         private Button _lastSelectedPlaylist;
         private Button _lastSelectedMusicTrack;
 
+        private readonly Dictionary<string, Button> _trackButtons = new();
+
         private readonly IPlaylistService _playlistService;
         private readonly IMusicTrackService _musicTrackService;
-        public MusicPlayerForm(IPlaylistService playlistService, IMusicTrackService musicTrackService)
+        private readonly IPlaybackService _playbackService;
+        public MusicPlayerForm(IPlaylistService playlistService, IMusicTrackService musicTrackService, IPlaybackService playbackService)
         {
             _playlistService = playlistService;
             _musicTrackService = musicTrackService;
+            _playbackService = playbackService;
 
             InitializeComponent();
             LoadCustomFonts();
             LoadPlaylistComponents();
+
+            _playbackService.GetMediaPlayer().PlayStateChange += MediaPlayer_TrackStateChanged;
         }
 
         private void LoadCustomFonts()
@@ -87,11 +93,6 @@ namespace MusicPlayerApp.Forms
             }
         }
 
-        private void lblPlaylists_Click(object sender, EventArgs e)
-        {
-
-        }
-
         //-- Playlists' Event Handlers and View
 
         private async void addPlaylistToolStripMenuItem_Click(object sender, EventArgs e)
@@ -111,7 +112,7 @@ namespace MusicPlayerApp.Forms
 
             if (e.Button == MouseButtons.Right)
             {
-                _lastRightClickedPlaylistId = btn.Tag as string;
+                _lastRightClickedPlaylist = btn;
 
                 var screenPoint = btn.PointToScreen(e.Location);
                 cmsPlaylistButton.Show(screenPoint);
@@ -124,13 +125,59 @@ namespace MusicPlayerApp.Forms
 
         private async void deletePlaylistToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (_lastRightClickedPlaylistId == null)
+            if (_lastRightClickedPlaylist == null)
                 return;
 
-            await _playlistService.DeletePlaylistAsync(_lastRightClickedPlaylistId);
+            await _playlistService.DeletePlaylistAsync((string)_lastRightClickedPlaylist.Tag!);
             LoadPlaylistComponents();
         }
 
+        private void renamePlaylistToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_lastRightClickedPlaylist == null)
+                return;
+
+            Playlist playlist = _playlistService.GetPlaylistById((string)_lastRightClickedPlaylist.Tag!);
+
+            string? newName = ShowInputDialog(
+                "Rename Playlist",
+                "Enter a new playlist name:",
+                playlist.playlistName
+            );
+
+            if (string.IsNullOrWhiteSpace(newName))
+                return;
+
+            _playlistService.RenamePlaylist((string)_lastRightClickedPlaylist.Tag!, newName);
+
+            _lastRightClickedPlaylist.Text = newName;
+        }
+
+        private string? ShowInputDialog(string title, string message, string defaultText = "")
+        {
+            Form prompt = new Form()
+            {
+                Width = 350,
+                Height = 150,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                Text = title,
+                StartPosition = FormStartPosition.CenterParent
+            };
+
+            Label textLabel = new Label() { Left = 10, Top = 10, Text = message, AutoSize = true };
+            TextBox textBox = new TextBox() { Left = 10, Top = 40, Width = 300, Text = defaultText };
+
+            Button confirmation = new Button() { Text = "OK", Left = 220, Width = 90, Top = 70 };
+            confirmation.DialogResult = DialogResult.OK;
+
+            prompt.Controls.Add(textBox);
+            prompt.Controls.Add(confirmation);
+            prompt.Controls.Add(textLabel);
+
+            prompt.AcceptButton = confirmation;
+
+            return prompt.ShowDialog() == DialogResult.OK ? textBox.Text : null;
+        }
 
         //-- Tracks' Event Handlers And View
 
@@ -144,20 +191,28 @@ namespace MusicPlayerApp.Forms
             List<MusicTrack> tracks = _musicTrackService.GetTracksByIds(trackIds);
 
             panelTrackHolder.Controls.Clear();
+            _trackButtons.Clear();
 
             if (tracks != null && tracks.Count > 0)
             {
+                MusicTrack? currentPlaybackTrack = _playbackService.CurrentMusicPlaying();
+
                 foreach (MusicTrack track in tracks)
                 {
 
                     string title = track.trackTitle;
-                    string album = track.trackAlbum?? "Unspecified";
+                    string album = track.trackAlbum ?? "Unspecified";
                     string dateAdded = track.trackDateAdded.ToString("MMM d, yyyy");
                     string duration = track.trackDuration.ToString(@"m\:ss");
 
                     Button trackRow = CreateTrackRow(track.trackId, title, album, dateAdded, duration);
 
+
+                    if (currentPlaybackTrack != null && currentPlaybackTrack.trackId == track.trackId)
+                        _lastSelectedMusicTrack = trackRow;
+
                     panelTrackHolder.Controls.Add(trackRow);
+                    _trackButtons[track.trackId] = trackRow;
                 }
             }
         }
@@ -225,11 +280,11 @@ namespace MusicPlayerApp.Forms
                 Height = labelHeight,
             };
 
-            trackBox.Click += TrackRow_Click;
-            lblTitle.Click += TrackRow_Click;
-            lblAlbum.Click += TrackRow_Click;
-            lblDateAdded.Click += TrackRow_Click;
-            lblDuration.Click += TrackRow_Click;
+            trackBox.MouseClick += TrackRow_Click;
+            lblTitle.MouseClick += TrackRow_Click;
+            lblAlbum.MouseClick += TrackRow_Click;
+            lblDateAdded.MouseClick += TrackRow_Click;
+            lblDuration.MouseClick += TrackRow_Click;
 
             trackBox.Controls.Add(lblTitle);
             trackBox.Controls.Add(lblAlbum);
@@ -239,20 +294,28 @@ namespace MusicPlayerApp.Forms
             return trackBox;
         }
 
-        private void TrackRow_Click(object? sender, EventArgs e) {
-            Control obj = (Control)sender!;
+        private void TrackRow_Click(object? sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                Control obj = (Control)sender!;
 
-            Button trackBox = obj as Button ?? (Button)obj.Parent!;
+                Button trackBox = obj as Button ?? (Button)obj.Parent!;
 
-            if (trackBox == null)
-                return;
+                if (trackBox == null)
+                    return;
 
-            string trackId = (string)trackBox.Tag!;
+                string trackId = (string)trackBox.Tag!;
 
-            if (trackId == null) 
-                return;
+                if (trackId == null)
+                    return;
 
-            SelectionChange(trackBox, Selection.MusicTrack);
+                SelectionChange(trackBox, Selection.MusicTrack);
+
+                _playbackService.ChangePlaylist((string)_lastSelectedPlaylist.Tag!, (string)_lastSelectedMusicTrack.Tag!);
+            }
+            else if (e.Button == MouseButtons.Right)
+            { }
         }
 
         private void SelectionChange(Control selectedObject, Selection selectionObject)
@@ -260,13 +323,13 @@ namespace MusicPlayerApp.Forms
             switch (selectionObject)
             {
                 case Selection.Playlist:
-                    
-                    if(_lastSelectedPlaylist != null)
+
+                    if (_lastSelectedPlaylist != null)
                     {
                         _lastSelectedPlaylist.BackColor = Color.FromKnownColor(KnownColor.Menu);
                         _lastSelectedPlaylist.FlatAppearance.BorderSize = 0;
                     }
-                    
+
                     Button btn1 = (Button)selectedObject;
 
                     btn1.FlatAppearance.BorderSize = 2;
@@ -294,6 +357,28 @@ namespace MusicPlayerApp.Forms
                     _lastSelectedMusicTrack = btn2;
                     break;
             }
+        }
+
+        public void UpdateTrackSelection(string trackId)
+        {
+            if (_lastSelectedMusicTrack != null)
+            {
+                _lastSelectedMusicTrack.BackColor = Color.FromKnownColor(KnownColor.Menu);
+                _lastSelectedPlaylist.FlatAppearance.BorderSize = 0;
+            }
+
+            if (_trackButtons[trackId] == null)
+                return;
+
+            Button btn = _trackButtons[trackId];
+
+            _lastSelectedMusicTrack = btn;
+
+            _lastSelectedMusicTrack.FlatAppearance.BorderSize = 2;
+            _lastSelectedMusicTrack.FlatAppearance.BorderColor = Color.Gray;
+            _lastSelectedMusicTrack.BackColor = Color.FromArgb(230, 240, 255);
+
+            lblCurrentTrack.Text = _musicTrackService.GetTrackById(trackId).trackTitle;
         }
 
         private async void addAMusicTrackToolStripMenuItem_Click(object sender, EventArgs e)
@@ -327,6 +412,42 @@ namespace MusicPlayerApp.Forms
             {
                 cmsMusicTrackAdd.Show(panelTrackHolder, e.Location);
             }
+        }
+
+        private void btnBackward_Click(object sender, EventArgs e)
+        {
+            _playbackService.PlayPrevious();
+
+            MusicTrack? currentTrack = _playbackService.CurrentMusicPlaying();
+            if (currentTrack != null)
+                UpdateTrackSelection(currentTrack.trackId);
+        }
+        private void btnForward_MouseClick(object sender, MouseEventArgs e)
+        {
+            _playbackService.PlayNext();
+
+            MusicTrack? currentTrack = _playbackService.CurrentMusicPlaying();
+            if (currentTrack != null)
+                UpdateTrackSelection(currentTrack.trackId);
+        }
+        private void btnPlayPause_MouseClick(object sender, MouseEventArgs e)
+        {
+            _playbackService.TogglePlayPause();
+
+            MusicTrack? currentTrack = _playbackService.CurrentMusicPlaying();
+            if (currentTrack != null)
+                UpdateTrackSelection(currentTrack.trackId);
+        }
+
+        // Autoplay Tracks after selected has ended.
+        private void MediaPlayer_TrackStateChanged(int newState)
+        {
+            if ((WMPLib.WMPPlayState)newState == WMPLib.WMPPlayState.wmppsMediaEnded)
+                _playbackService.PlayNext();
+
+            MusicTrack? currentTrack = _playbackService.CurrentMusicPlaying();
+            if (currentTrack != null)
+                UpdateTrackSelection(currentTrack.trackId);
         }
     }
 }

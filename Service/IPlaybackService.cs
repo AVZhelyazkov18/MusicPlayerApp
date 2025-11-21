@@ -1,19 +1,16 @@
 ﻿using MusicPlayerApp.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using WMPLib;
 
 namespace MusicPlayerApp.Service
 {
-    internal interface IPlaybackService
+    public interface IPlaybackService
     {
-        void Play();
-        void Stop();
-        void Forward();
-        void Backward();
-        int ChangePlayList(string guid);
-        MusicTrack CurrentMusicPlaying();
+        void ChangePlaylist(string playlistId, string trackId);
+        void TogglePlayPause();
+        void PlayNext();
+        void PlayPrevious();
+
+        WindowsMediaPlayer GetMediaPlayer();
+        MusicTrack? CurrentMusicPlaying();
     }
 }

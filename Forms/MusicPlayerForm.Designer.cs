@@ -43,6 +43,7 @@
             addPlaylistToolStripMenuItem = new ToolStripMenuItem();
             cmsPlaylistButton = new ContextMenuStrip(components);
             deletePlaylistToolStripMenuItem = new ToolStripMenuItem();
+            renamePlaylistToolStripMenuItem = new ToolStripMenuItem();
             panel3 = new Panel();
             panelTrackHolder = new FlowLayoutPanel();
             cmsMusicTrackAdd = new ContextMenuStrip(components);
@@ -97,7 +98,6 @@
             lblPlaylists.Size = new Size(132, 45);
             lblPlaylists.TabIndex = 0;
             lblPlaylists.Text = "Playlists";
-            lblPlaylists.Click += lblPlaylists_Click;
             // 
             // panelTrackBackground
             // 
@@ -139,6 +139,7 @@
             btnForward.Size = new Size(40, 40);
             btnForward.TabIndex = 2;
             btnForward.UseVisualStyleBackColor = false;
+            btnForward.MouseClick += btnForward_MouseClick;
             // 
             // btnBackward
             // 
@@ -149,6 +150,7 @@
             btnBackward.Size = new Size(40, 40);
             btnBackward.TabIndex = 1;
             btnBackward.UseVisualStyleBackColor = false;
+            btnBackward.Click += btnBackward_Click;
             // 
             // btnPlayPause
             // 
@@ -160,6 +162,7 @@
             btnPlayPause.Size = new Size(40, 40);
             btnPlayPause.TabIndex = 0;
             btnPlayPause.UseVisualStyleBackColor = false;
+            btnPlayPause.MouseClick += btnPlayPause_MouseClick;
             // 
             // cmsPlaylist
             // 
@@ -176,17 +179,24 @@
             // 
             // cmsPlaylistButton
             // 
-            cmsPlaylistButton.Items.AddRange(new ToolStripItem[] { deletePlaylistToolStripMenuItem });
+            cmsPlaylistButton.Items.AddRange(new ToolStripItem[] { deletePlaylistToolStripMenuItem, renamePlaylistToolStripMenuItem });
             cmsPlaylistButton.Name = "cmsPlaylistButton";
-            cmsPlaylistButton.Size = new Size(148, 26);
+            cmsPlaylistButton.Size = new Size(158, 48);
             cmsPlaylistButton.MouseUp += cmsPlaylistButton_MouseUp;
             // 
             // deletePlaylistToolStripMenuItem
             // 
             deletePlaylistToolStripMenuItem.Name = "deletePlaylistToolStripMenuItem";
-            deletePlaylistToolStripMenuItem.Size = new Size(147, 22);
+            deletePlaylistToolStripMenuItem.Size = new Size(157, 22);
             deletePlaylistToolStripMenuItem.Text = "Delete Playlist";
             deletePlaylistToolStripMenuItem.Click += deletePlaylistToolStripMenuItem_Click;
+            // 
+            // renamePlaylistToolStripMenuItem
+            // 
+            renamePlaylistToolStripMenuItem.Name = "renamePlaylistToolStripMenuItem";
+            renamePlaylistToolStripMenuItem.Size = new Size(157, 22);
+            renamePlaylistToolStripMenuItem.Text = "Rename Playlist";
+            renamePlaylistToolStripMenuItem.Click += renamePlaylistToolStripMenuItem_Click;
             // 
             // panel3
             // 
@@ -265,5 +275,6 @@
         private Button btnPlayPause;
         private Button btnBackward;
         private Button btnForward;
+        private ToolStripMenuItem renamePlaylistToolStripMenuItem;
     }
 }
