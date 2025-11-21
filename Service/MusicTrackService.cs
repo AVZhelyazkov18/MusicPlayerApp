@@ -50,7 +50,11 @@ namespace MusicPlayerApp.Service
             string title = string.IsNullOrEmpty(media.getItemInfo("Title")) ? "Unspecified" : media.getItemInfo("Title");
             string album = string.IsNullOrEmpty(media.getItemInfo("Album")) ? "Unspecified" : media.getItemInfo("Album");
             TimeSpan duration = TimeSpan.FromSeconds(media.duration);
-            DateTime dateAdded = DateTime.Parse(media.getItemInfo("AcquisitionTime"));
+            DateTime dateAdded;
+            if(string.IsNullOrWhiteSpace(media.getItemInfo("AcquisitionTime")))
+                dateAdded = DateTime.Now;
+            else
+                dateAdded = DateTime.Parse(media.getItemInfo("AcquisitionTime"));
 
             MusicTrack track = new MusicTrack(trackPath, title, album, duration, dateAdded);
 
